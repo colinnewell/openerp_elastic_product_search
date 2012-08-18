@@ -2,10 +2,17 @@
 
 from osv import fields, osv
 from pyes import ES
+import tools
 
-# FIXME: where do I want to create the connection
-# how do I deal with the connection settings?
-conn = ES('127.0.0.1:9200')
+# this seems ugly but it kinda seems
+# consistent with the way OpenERP is currently architected??
+# TODO: perhaps add debug logging to indicate 
+# which server we've connected to?
+server = tools.config.get('elasticsearch', None)
+conn = ES(server or '127.0.0.1:9200')
+
+# TODO: at some point a lot of this code could probably be
+# refactored out into a trait.
 
 
 class product_search(osv.osv):
@@ -20,8 +27,9 @@ class product_search(osv.osv):
         import pdb; pdb.set_trace()
         data = self._filter_values(vals)
         if len(data) > 0:
-            lines = [ 'ctx._source.%s = %s;' % (k) for k in data.keys() ]
+            lines = ['ctx._source.%s = %s;' % (k, k) for k in data.keys()]
             script = "\n".join(lines)
+            # TODO: perhaps add debug logging?
             # FIXME: this call isn't quite right
             conn.update(vals, "openerp_" + cr.dbname, ids, "product", script)
         return super(product_search, self).write(cr, user, ids, vals, context)
