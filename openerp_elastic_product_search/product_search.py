@@ -20,17 +20,20 @@ class product_search(osv.osv):
         import pdb; pdb.set_trace()
         data = self._filter_values(vals)
         if len(data) > 0:
-            #conn.update(vals, "openerp", "product", ids)
-            pass
+            lines = [ 'ctx._source.%s = %s;' % (k) for k in data.keys() ]
+            script = "\n".join(lines)
+            # FIXME: this call isn't quite right
+            conn.update(vals, "openerp_" + cr.dbname, ids, "product", script)
         return super(product_search, self).write(cr, user, ids, vals, context)
 
     def create(self, cr, user, vals, context=None):
-        import pdb; pdb.set_trace()
         o = super(product_search, self).create(cr, user, vals, context)
         # o is the id
         # vals is the data structure
+        # FIXME: base the index name on the database name
         data = self._filter_values(vals)
-        conn.index(data, "openerp", "product", o)
+        # FIXME how save is the dbname for this purpose?
+        conn.index(data, "openerp_" + cr.dbname, "product", o)
         return o
 
     def _filter_values(self, vals):
