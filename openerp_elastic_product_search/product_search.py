@@ -27,11 +27,11 @@ class product_search(osv.osv):
         import pdb; pdb.set_trace()
         data = self._filter_values(vals)
         if len(data) > 0:
-            lines = ['ctx._source.%s = %s;' % (k, k) for k in data.keys()]
-            script = "\n".join(lines)
+            #lines = ['ctx._source.%s = %s;' % (k, k) for k in data.keys()]
+            #script = "\n".join(lines)
             # TODO: perhaps add debug logging?
-            # FIXME: this call isn't quite right
-            conn.update(vals, "openerp_" + cr.dbname, ids, "product", script)
+            for prod_id in ids:
+                conn.update(data, "openerp_" + cr.dbname, "product", prod_id)
         return super(product_search, self).write(cr, user, ids, vals, context)
 
     def create(self, cr, user, vals, context=None):
