@@ -24,11 +24,8 @@ class product_search(osv.osv):
                             'name']
 
     def write(self, cr, user, ids, vals, context=None):
-        import pdb; pdb.set_trace()
         data = self._filter_values(vals)
         if len(data) > 0:
-            #lines = ['ctx._source.%s = %s;' % (k, k) for k in data.keys()]
-            #script = "\n".join(lines)
             # TODO: perhaps add debug logging?
             for prod_id in ids:
                 conn.update(data, "openerp_" + cr.dbname, "product", prod_id)
@@ -36,11 +33,8 @@ class product_search(osv.osv):
 
     def create(self, cr, user, vals, context=None):
         o = super(product_search, self).create(cr, user, vals, context)
-        # o is the id
-        # vals is the data structure
-        # FIXME: base the index name on the database name
         data = self._filter_values(vals)
-        # FIXME how save is the dbname for this purpose?
+        # FIXME how safe is the dbname for this purpose?
         conn.index(data, "openerp_" + cr.dbname, "product", o)
         return o
 
