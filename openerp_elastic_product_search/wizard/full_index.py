@@ -7,8 +7,10 @@ class search_full_index(osv.osv_memory):
     _description = 'Elastic Search Index'
 
     def index_data(self, cr, uid, ids, context=None):
+        products = self.pool.get('product.product')
+        import pdb; pdb.set_trace()
+        return { 'type': 'ir.actions.act_window_close' }
 
-        pass
 
 search_full_index()
 
