@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        <record id="view_full_index" model="ir.ui.view">
+            <field name="name">Index Data</field>
+            <field name="model">product.product</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <form string="Index Data">
+                    <label>Rebuild the index.</label>
+                    <group>
+                        <button special="cancel" string="Cancel" icon="gtk-cancel" />
+                        <button name="index_data" string="Index" type="object" icon="gtk-ok" />
+                    </group>
+                </form>
+            </field>
+        </record>
+        <record id="action_full_index" model="ir.actions.act_window">
+            <field name="name">Index Data</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">product.product</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+        </record>
+    </data>
+</openerp>

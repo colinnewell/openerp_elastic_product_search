@@ -13,6 +13,7 @@
     'depends': [ 'purchase', 'sale'],
     'init_xml': [],
     'update_xml': [
+        'wizard/full_index.xml'
     ],
     'demo_xml': [],
     'test': [],
