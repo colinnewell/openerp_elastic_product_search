@@ -3,7 +3,7 @@
     <data>
         <record id="view_full_index" model="ir.ui.view">
             <field name="name">Index Data</field>
-            <field name="model">product.product</field>
+            <field name="model">openerp_elastic_product_search.full_index</field>
             <field name="type">form</field>
             <field name="arch" type="xml">
                 <form string="Index Data">
@@ -18,10 +18,18 @@
         <record id="action_full_index" model="ir.actions.act_window">
             <field name="name">Index Data</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">product.product</field>
+            <field name="res_model">openerp_elastic_product_search.full_index</field>
             <field name="view_type">form</field>
             <field name="view_mode">form</field>
             <field name="target">new</field>
         </record>
+
+        <menuitem id="menu_elasticsearch_index" 
+            name="ElasticSearch Index" 
+            action="action_full_index" 
+            icon="STOCK_EXECUTE" 
+            parent="base.next_id_10"
+            groups="base.group_extended" />
+
     </data>
 </openerp>
