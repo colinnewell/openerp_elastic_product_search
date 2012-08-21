@@ -1,0 +1,20 @@
+This module hooks OpenERP into ElasticSearch.  It hooks into some of
+the objects and when they are created or modified, sends their data
+to ElasticSearch to be indexed.  
+
+It also provides a menu option on the Settings->Configuration->Scheduler 
+menu to perform a full reindex of the data.
+
+The indexes created have the name 'openerp_$dbname'.  
+
+The models hooked into the search are,
+
+    product.product - name, description, description_sale
+
+By default the ElasticSearch is assumed to be listening on 127.0.0.1:9200.  
+If you want to change where it tries to connect to add an elasticsearch
+configuration parameter to the openerp-server.conf
+
+    [options]
+    elasticsearch = 192.168.0.99:9200
+
