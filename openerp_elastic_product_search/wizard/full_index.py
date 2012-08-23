@@ -9,7 +9,6 @@ class search_full_index(osv.osv_memory):
     def index_data(self, cr, uid, ids, context=None):
         products = self.pool.get('product.product')
         products.reindex(cr, uid)
-        import pdb; pdb.set_trace()
         return { 'type': 'ir.actions.act_window_close' }
 
 
