@@ -1,0 +1,5 @@
+Add other models to the search
+  * Product Categories
+  * Product templates
+  * Product variants?
+Create full reindex (possibly with options to blow away existing index)
