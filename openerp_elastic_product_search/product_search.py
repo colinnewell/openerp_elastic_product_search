@@ -6,7 +6,7 @@ import tools
 
 # this seems ugly but it kinda seems
 # consistent with the way OpenERP is currently architected??
-# TODO: perhaps add debug logging to indicate 
+# TODO: perhaps add debug logging to indicate
 # which server we've connected to?
 server = tools.config.get('elasticsearch', None)
 conn = ES(server or '127.0.0.1:9200')
@@ -17,6 +17,7 @@ conn = ES(server or '127.0.0.1:9200')
 # FIXME: I need to do something to ensure the index is created
 # I probably also want to do an index instead of an update
 # if the object doesn't exist yet too.
+
 
 class product_search(osv.osv):
     _name = "product.product"
@@ -29,7 +30,7 @@ class product_search(osv.osv):
     def write(self, cr, user, ids, vals, context=None):
         data = self._filter_values(vals)
         # FIXME: am I doing this update too soon?
-        # I suspect I'm doing this before the validation 
+        # I suspect I'm doing this before the validation
         if len(data) > 0:
             # TODO: perhaps add debug logging?
             for prod_id in ids:
@@ -38,18 +39,20 @@ class product_search(osv.osv):
 
     def create(self, cr, user, vals, context=None):
         o = super(product_search, self).create(cr, user, vals, context)
-        # FIXME: I should probably check o is okay.
-        data = self._filter_values(vals)
-        # FIXME how safe is the dbname for this purpose?
-        conn.index(data, "openerp_" + cr.dbname, "product", o)
+        if o:
+            data = self._filter_values(vals)
+            # FIXME how safe is the dbname for this purpose?
+            conn.index(data, "openerp_" + cr.dbname, "product", o)
         return o
 
     def _filter_values(self, vals):
+        # FIXME: need to filter out nulls
+        # also need to look at stuff that does _source stuff.
         return dict([v for v in vals.items()
                             if v[0] in self._columns_to_search])
 
     def reindex(self, cr, uid):
-        prod_ids = self.search(cr, uid, None)
+        prod_ids = self.search(cr, uid, [])
         # FIXME: is reading all the products in one go a good idea?
         # perhaps break it into chunks?
         prods = self.read(cr, uid, prod_ids)
@@ -57,7 +60,7 @@ class product_search(osv.osv):
         # bulk operations
         for product in prods:
             data = self._filter_values(product)
-            conn.index(data, "openerp_" + cr.dbname, "product", product.id)
+            conn.index(data, "openerp_" + cr.dbname, "product", product['id'])
 
 
 product_search()
