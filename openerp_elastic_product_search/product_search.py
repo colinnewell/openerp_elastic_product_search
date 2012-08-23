@@ -25,6 +25,8 @@ class product_search(osv.osv):
 
     def write(self, cr, user, ids, vals, context=None):
         data = self._filter_values(vals)
+        # FIXME: am I doing this update too soon?
+        # I suspect I'm doing this before the validation 
         if len(data) > 0:
             # TODO: perhaps add debug logging?
             for prod_id in ids:
@@ -33,6 +35,7 @@ class product_search(osv.osv):
 
     def create(self, cr, user, vals, context=None):
         o = super(product_search, self).create(cr, user, vals, context)
+        # FIXME: I should probably check o is okay.
         data = self._filter_values(vals)
         # FIXME how safe is the dbname for this purpose?
         conn.index(data, "openerp_" + cr.dbname, "product", o)
