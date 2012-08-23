@@ -2,6 +2,7 @@
 
 from osv import fields, osv
 from pyes import ES
+import pyes.exceptions
 import tools
 
 # this seems ugly but it kinda seems
@@ -28,14 +29,21 @@ class product_search(osv.osv):
                             'name']
 
     def write(self, cr, user, ids, vals, context=None):
-        data = self._filter_values(vals)
-        # FIXME: am I doing this update too soon?
-        # I suspect I'm doing this before the validation
-        if len(data) > 0:
-            # TODO: perhaps add debug logging?
-            for prod_id in ids:
-                conn.update(data, "openerp_" + cr.dbname, "product", prod_id)
-        return super(product_search, self).write(cr, user, ids, vals, context)
+        success = super(product_search, self).write(cr, user, ids, vals, context)
+        if success:
+            data = self._filter_values(vals)
+            if len(data) > 0:
+                for prod_id in ids:
+                    try:
+                        conn.update(data, "openerp_" + cr.dbname, "product", prod_id)
+                    except pyes.exceptions.IndexMissingException:
+                        # may as well just index what we have.
+                        conn.index(data, "openerp_" + cr.dbname, "product", prod_id)
+                    except pyes.exceptions.NotFoundException:
+                        # may as well just index what we have.
+                        conn.index(data, "openerp_" + cr.dbname, "product", prod_id)
+                    
+        return success
 
     def create(self, cr, user, vals, context=None):
         o = super(product_search, self).create(cr, user, vals, context)
