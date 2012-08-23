@@ -45,5 +45,16 @@ class product_search(osv.osv):
         return dict([v for v in vals.items()
                             if v[0] in self._columns_to_search])
 
+    def reindex(self, cr, uid):
+        prod_ids = self.search(cr, uid, None)
+        # FIXME: is reading all the products in one go a good idea?
+        # perhaps break it into chunks?
+        prods = self.read(cr, uid, prod_ids)
+        # FIXME: also think about making use of the elastic search
+        # bulk operations
+        for product in prods:
+            data = self._filter_values(product)
+            conn.index(data, "openerp_" + cr.dbname, "product", product.id)
+
 
 product_search()
