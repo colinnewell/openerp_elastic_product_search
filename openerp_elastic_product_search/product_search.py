@@ -14,6 +14,9 @@ conn = ES(server or '127.0.0.1:9200')
 # TODO: at some point a lot of this code could probably be
 # refactored out into a trait.
 
+# FIXME: I need to do something to ensure the index is created
+# I probably also want to do an index instead of an update
+# if the object doesn't exist yet too.
 
 class product_search(osv.osv):
     _name = "product.product"
