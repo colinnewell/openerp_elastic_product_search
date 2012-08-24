@@ -10,7 +10,7 @@
     """,
     'author': 'Colin Newell',
     'website': 'http://colinnewell.wordpress.com',
-    'depends': [ 'purchase', 'sale'],
+    'depends': ['purchase', 'sale'],
     'init_xml': [],
     'update_xml': [
         'wizard/full_index.xml'
