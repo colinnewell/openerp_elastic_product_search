@@ -1,0 +1,10 @@
+This module depends on the pyes python module.
+
+http://packages.python.org/pyes/manual/installation.html
+
+You also need elastic search running somewhere for it to talk to.
+
+http://www.elasticsearch.org/
+
+Install the module into the addons directory, then install it in the 
+database you want to add search to.  
