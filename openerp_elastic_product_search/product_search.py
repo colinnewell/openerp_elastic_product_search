@@ -79,10 +79,12 @@ class product_search(osv.osv):
         return success
 
     def _filter_values(self, vals):
-        # FIXME: need to filter out nulls
-        # also need to look at stuff that does _source stuff.
+        # NOTE: this assumes we aren't interested in real boolean
+        # flags.  I'm assuming we're just indexing strings which
+        # may turn out to be a dodgy assumption.
         return dict([v for v in vals.items()
-                            if v[0] in self._columns_to_search])
+                            if v[0] in self._columns_to_search
+                                and not isinstance(v[1], bool)])
 
     def _index_name(self, cr):
         # FIXME how safe is the dbname for this purpose?
