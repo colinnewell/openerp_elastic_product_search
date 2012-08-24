@@ -4,13 +4,17 @@ from osv import fields, osv
 from pyes import ES
 import pyes.exceptions
 import tools
+import logging
+
+_logger = logging.getLogger(__name__)
 
 # this seems ugly but it kinda seems
 # consistent with the way OpenERP is currently architected??
 # TODO: perhaps add debug logging to indicate
 # which server we've connected to?
-server = tools.config.get('elasticsearch', None)
-conn = ES(server or '127.0.0.1:9200')
+server = tools.config.get('elasticsearch', '127.0.0.1:9200')
+conn = ES(server)
+_logger.info('Connecting to ElasticSearch server %s' % server)
 
 # TODO: at some point a lot of this code could probably be
 # refactored out into a trait.
@@ -29,20 +33,31 @@ class product_search(osv.osv):
                             'name']
 
     def write(self, cr, user, ids, vals, context=None):
-        success = super(product_search, self).write(cr, user, ids, vals, context)
-        if success:
+        success = super(product_search, self).write(cr, user, ids,
+                                                    vals, context)
+        if success and ids:
             data = self._filter_values(vals)
             if len(data) > 0:
+                if isinstance(ids, (int, long)):
+                    ids = [ids]
+                index = "openerp_" + cr.dbname
                 for prod_id in ids:
                     try:
-                        conn.update(data, "openerp_" + cr.dbname, "product", prod_id)
+                        conn.update(data, index, "product", prod_id)
                     except pyes.exceptions.IndexMissingException:
                         # may as well just index what we have.
-                        conn.index(data, "openerp_" + cr.dbname, "product", prod_id)
+                        # NOTE: this isn't the only time we might create
+                        # the index, it's just the only time we explicitly
+                        # notice we are.
+                        _logger.info('Creating index %s in ElasticSearch'
+                                        % index)
+                        conn.index(data, index, "product", prod_id)
                     except pyes.exceptions.NotFoundException:
                         # may as well just index what we have.
-                        conn.index(data, "openerp_" + cr.dbname, "product", prod_id)
-                    
+                        _logger.debug('Product %d not found in index'
+                                        % prod_id)
+                        conn.index(data, index, "product", prod_id)
+
         return success
 
     def create(self, cr, user, vals, context=None):
@@ -52,6 +67,15 @@ class product_search(osv.osv):
             # FIXME how safe is the dbname for this purpose?
             conn.index(data, "openerp_" + cr.dbname, "product", o)
         return o
+
+    def unlink(self, cr, uid, ids, context=None):
+        success = super(product_search, self).unlink(cr, uid, ids, context)
+        if success and ids:
+            if isinstance(ids, (int, long)):
+                ids = [ids]
+            for prod_id in ids:
+                conn.delete("openerp_" + cr.dbname, "product", prod_id)
+        return success
 
     def _filter_values(self, vals):
         # FIXME: need to filter out nulls
@@ -66,9 +90,12 @@ class product_search(osv.osv):
         prods = self.read(cr, uid, prod_ids)
         # FIXME: also think about making use of the elastic search
         # bulk operations
+        index = "openerp_" + cr.dbname
         for product in prods:
             data = self._filter_values(product)
-            conn.index(data, "openerp_" + cr.dbname, "product", product['id'])
+            _logger.debug("%s: Indexing product %d" % (index, product['id']))
+            _logger.debug(data)
+            conn.index(data, index, "product", product['id'])
 
 
 product_search()
