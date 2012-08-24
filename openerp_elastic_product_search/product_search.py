@@ -8,21 +8,12 @@ import logging
 
 _logger = logging.getLogger(__name__)
 
-# this seems ugly but it kinda seems
-# consistent with the way OpenERP is currently architected??
-# TODO: perhaps add debug logging to indicate
-# which server we've connected to?
 server = tools.config.get('elasticsearch', '127.0.0.1:9200')
 conn = ES(server)
 _logger.info('Connecting to ElasticSearch server %s' % server)
 
 # TODO: at some point a lot of this code could probably be
 # refactored out into a trait.
-
-# FIXME: I need to do something to ensure the index is created
-# I probably also want to do an index instead of an update
-# if the object doesn't exist yet too.
-
 
 class product_search(osv.osv):
     _name = "product.product"
