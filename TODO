@@ -3,5 +3,4 @@ Add other models to the search
   * Product templates
   * Product variants?
 Create full reindex (possibly with options to blow away existing index)
-Delete items from the index when they are deleted from OpenERP.
 Probably when they are made inactive too.
