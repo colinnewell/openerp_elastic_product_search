@@ -15,6 +15,7 @@ _logger.info('Connecting to ElasticSearch server %s' % server)
 # TODO: at some point a lot of this code could probably be
 # refactored out into a trait.
 
+
 class product_search(osv.osv):
     _name = "product.product"
     _inherit = "product.product"
