@@ -14,6 +14,8 @@ _logger.info('Connecting to ElasticSearch server %s' % server)
 
 # TODO: at some point a lot of this code could probably be
 # refactored out into a trait.
+# FIXME: it would be ideal if we could configure the 
+# classes and fields we're interested in.
 
 
 class product_search(osv.osv):
@@ -56,8 +58,9 @@ class product_search(osv.osv):
         o = super(product_search, self).create(cr, user, vals, context)
         if o:
             data = self._filter_values(vals)
-            index = self._index_name(cr)
-            conn.index(data, index, "product", o)
+            if len(data) > 0:
+                index = self._index_name(cr)
+                conn.index(data, index, "product", o)
         return o
 
     def unlink(self, cr, uid, ids, context=None):
@@ -89,9 +92,10 @@ class product_search(osv.osv):
         index = self._index_name(cr)
         for product in prods:
             data = self._filter_values(product)
-            _logger.debug("%s: Indexing product %d" % (index, product['id']))
-            _logger.debug(data)
-            conn.index(data, index, "product", product['id'])
+            if len(data) > 0:
+                _logger.debug("%s: Indexing product %d" % (index, product['id']))
+                _logger.debug(data)
+                conn.index(data, index, "product", product['id'])
 
 
 product_search()
