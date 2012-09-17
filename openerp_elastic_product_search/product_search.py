@@ -18,7 +18,9 @@ _logger.info('Connecting to ElasticSearch server %s' % server)
 # classes and fields we're interested in.
 
 
-class search_mixin(object):
+class search_mixin(osv.osv):
+
+    _register = False
 
     def write(self, cr, user, ids, vals, context=None):
         success = super(search_mixin, self).write(cr, user, ids,
@@ -31,7 +33,7 @@ class search_mixin(object):
                 index = self._index_name(cr)
                 for prod_id in ids:
                     try:
-                        conn.update(data, index, search_table, prod_id)
+                        conn.update(data, index, self.search_table, prod_id)
                     except pyes.exceptions.IndexMissingException:
                         # may as well just index what we have.
                         # NOTE: this isn't the only time we might create
@@ -39,12 +41,12 @@ class search_mixin(object):
                         # notice we are.
                         _logger.info('Creating index %s in ElasticSearch'
                                         % index)
-                        conn.index(data, index, search_table, prod_id)
+                        conn.index(data, index, self.search_table, prod_id)
                     except pyes.exceptions.NotFoundException:
                         # may as well just index what we have.
                         _logger.debug('%s %d not found in index'
-                                        % (search_table, prod_id))
-                        conn.index(data, index, search_table, prod_id)
+                                        % (self.search_table, prod_id))
+                        conn.index(data, index, self.search_table, prod_id)
 
         return success
 
@@ -54,7 +56,7 @@ class search_mixin(object):
             data = self._filter_values(vals)
             if len(data) > 0:
                 index = self._index_name(cr)
-                conn.index(data, index, search_table, o)
+                conn.index(data, index, self.search_table, o)
         return o
 
     def unlink(self, cr, uid, ids, context=None):
@@ -64,7 +66,7 @@ class search_mixin(object):
                 ids = [ids]
             index = self._index_name(cr)
             for prod_id in ids:
-                conn.delete(index, search_table, prod_id)
+                conn.delete(index, self.search_table, prod_id)
         return success
 
     def _filter_values(self, vals):
@@ -88,23 +90,25 @@ class search_mixin(object):
             data = self._filter_values(product)
             if len(data) > 0:
                 _logger.debug("%s: Indexing %s %d" %
-                            (index, search_table, product['id']))
+                            (index, self.search_table, product['id']))
                 _logger.debug(data)
-                conn.index(data, index, search_table, product['id'])
+                conn.index(data, index, self.search_table, product['id'])
 
 
-class product_template_search(osv.osv, search_mixin):
+class product_template_search(search_mixin):
     _name = "product.template"
     _inherit = "product.template"
+    _register = True
 
     columns_to_search = ['description', 'description_sale',
                             'name']
     search_table = 'product_template'
 
 
-class product_search(osv.osv, search_mixin):
+class product_search(search_mixin):
     _name = "product.product"
     _inherit = "product.product"
+    _register = True
 
     # FIXME: ought to figure out what fields we care about.
     columns_to_search = ['description', 'description_sale',
