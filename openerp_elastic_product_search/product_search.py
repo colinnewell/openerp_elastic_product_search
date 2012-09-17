@@ -12,8 +12,6 @@ server = tools.config.get('elasticsearch', '127.0.0.1:9200')
 conn = ES(server)
 _logger.info('Connecting to ElasticSearch server %s' % server)
 
-# TODO: at some point a lot of this code could probably be
-# refactored out into a trait.
 # FIXME: it would be ideal if we could configure the
 # classes and fields we're interested in.
 
@@ -33,7 +31,7 @@ class search_mixin(osv.osv):
                 index = self._index_name(cr)
                 for prod_id in ids:
                     try:
-                        conn.update(data, index, self.search_table, prod_id)
+                        conn.update(data, index, self.search_type, prod_id)
                     except pyes.exceptions.IndexMissingException:
                         # may as well just index what we have.
                         # NOTE: this isn't the only time we might create
@@ -41,12 +39,12 @@ class search_mixin(osv.osv):
                         # notice we are.
                         _logger.info('Creating index %s in ElasticSearch'
                                         % index)
-                        conn.index(data, index, self.search_table, prod_id)
+                        conn.index(data, index, self.search_type, prod_id)
                     except pyes.exceptions.NotFoundException:
                         # may as well just index what we have.
                         _logger.debug('%s %d not found in index'
-                                        % (self.search_table, prod_id))
-                        conn.index(data, index, self.search_table, prod_id)
+                                        % (self.search_type, prod_id))
+                        conn.index(data, index, self.search_type, prod_id)
 
         return success
 
@@ -56,7 +54,7 @@ class search_mixin(osv.osv):
             data = self._filter_values(vals)
             if len(data) > 0:
                 index = self._index_name(cr)
-                conn.index(data, index, self.search_table, o)
+                conn.index(data, index, self.search_type, o)
         return o
 
     def unlink(self, cr, uid, ids, context=None):
@@ -66,12 +64,13 @@ class search_mixin(osv.osv):
                 ids = [ids]
             index = self._index_name(cr)
             for prod_id in ids:
-                conn.delete(index, self.search_table, prod_id)
+                conn.delete(index, self.search_type, prod_id)
         return success
 
     def _filter_values(self, vals):
-        return dict([v for v in vals.items()
-                            if v[0] in self.columns_to_search])
+        return dict([isinstance(v[1], tuple) and (v[0], v[1][0]) or v
+                        for v in vals.items()
+                        if v[0] in self.columns_to_search])
 
     def _index_name(self, cr):
         # FIXME how safe is the dbname for this purpose?
@@ -90,9 +89,9 @@ class search_mixin(osv.osv):
             data = self._filter_values(product)
             if len(data) > 0:
                 _logger.debug("%s: Indexing %s %d" %
-                            (index, self.search_table, product['id']))
+                            (index, self.search_type, product['id']))
                 _logger.debug(data)
-                conn.index(data, index, self.search_table, product['id'])
+                conn.index(data, index, self.search_type, product['id'])
 
 
 class product_template_search(search_mixin):
@@ -101,8 +100,8 @@ class product_template_search(search_mixin):
     _register = True
 
     columns_to_search = ['description', 'description_sale',
-                            'name']
-    search_table = 'product_template'
+                            'name', 'categ_id']
+    search_type = 'product_template'
 
 
 class product_search(search_mixin):
@@ -110,11 +109,18 @@ class product_search(search_mixin):
     _inherit = "product.product"
     _register = True
 
-    # FIXME: ought to figure out what fields we care about.
     columns_to_search = ['description', 'description_sale',
-                            'name']
-    search_table = 'product'
+                            'name', 'categ_id']
+    search_type = 'product'
 
+
+class product_category_search(search_mixin):
+
+    _name = 'product.category'
+    _inherit = 'product.category'
+    # FIXME: need to change name we store it as.
+    columns_to_search = ['name']
+    search_type = 'product_category'
 
 product_template_search()
 product_search()
