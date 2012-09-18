@@ -16,12 +16,12 @@ _logger.info('Connecting to ElasticSearch server %s' % server)
 # classes and fields we're interested in.
 
 
-class search_mixin(osv.osv):
+class search_base(osv.osv):
 
     _register = False
 
     def write(self, cr, user, ids, vals, context=None):
-        success = super(search_mixin, self).write(cr, user, ids,
+        success = super(search_base, self).write(cr, user, ids,
                                                     vals, context)
         if success and ids:
             data = self._filter_values(vals)
@@ -49,7 +49,7 @@ class search_mixin(osv.osv):
         return success
 
     def create(self, cr, user, vals, context=None):
-        o = super(search_mixin, self).create(cr, user, vals, context)
+        o = super(search_base, self).create(cr, user, vals, context)
         if o:
             data = self._filter_values(vals)
             if len(data) > 0:
@@ -58,7 +58,7 @@ class search_mixin(osv.osv):
         return o
 
     def unlink(self, cr, uid, ids, context=None):
-        success = super(search_mixin, self).unlink(cr, uid, ids, context)
+        success = super(search_base, self).unlink(cr, uid, ids, context)
         if success and ids:
             if isinstance(ids, (int, long)):
                 ids = [ids]
@@ -94,7 +94,7 @@ class search_mixin(osv.osv):
                 conn.index(data, index, self.search_type, product['id'])
 
 
-class product_template_search(search_mixin):
+class product_template_search(search_base):
     _name = "product.template"
     _inherit = "product.template"
     _register = True
@@ -104,7 +104,7 @@ class product_template_search(search_mixin):
     search_type = 'product_template'
 
 
-class product_search(search_mixin):
+class product_search(search_base):
     _name = "product.product"
     _inherit = "product.product"
     _register = True
@@ -114,13 +114,16 @@ class product_search(search_mixin):
     search_type = 'product'
 
 
-class product_category_search(search_mixin):
+class product_category_search(search_base):
 
     _name = 'product.category'
     _inherit = 'product.category'
-    # FIXME: need to change name we store it as.
+    _register = True
+
     columns_to_search = ['name']
     search_type = 'product_category'
 
+
 product_template_search()
 product_search()
+product_category_search()
