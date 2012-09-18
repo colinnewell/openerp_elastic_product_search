@@ -10,6 +10,7 @@ _logger = logging.getLogger(__name__)
 
 server = tools.config.get('elasticsearch', '127.0.0.1:9200')
 conn = ES(server)
+# FIXME: can I put a mapping with no specific index?
 _logger.info('Connecting to ElasticSearch server %s' % server)
 
 # FIXME: it would be ideal if we could configure the
@@ -29,6 +30,7 @@ class search_base(osv.osv):
                 if isinstance(ids, (int, long)):
                     ids = [ids]
                 index = self._index_name(cr)
+                self.ensure_mapping(index)
                 for prod_id in ids:
                     try:
                         conn.update(data, index, self.search_type, prod_id)
@@ -54,6 +56,7 @@ class search_base(osv.osv):
             data = self._filter_values(vals)
             if len(data) > 0:
                 index = self._index_name(cr)
+                self.ensure_mapping(index)
                 conn.index(data, index, self.search_type, o)
         return o
 
@@ -77,6 +80,18 @@ class search_base(osv.osv):
         index = "openerp_" + cr.dbname
         return index
 
+    def ensure_mapping(self, index):
+        mapping_found = False
+        try:
+            conn.get_mapping(self.search_type, index)
+        except pyes.exceptions.IndexMissingException:
+            conn.create_index(index)
+        except pyes.exceptions.TypeMissingException:
+            pass
+        if not mapping_found:
+            _logger.debug("Adding mapping for %s" % self.search_type)
+            conn.put_mapping(self.search_type, { 'properties': self.search_mapping }, index)
+
     def reindex(self, cr, uid):
         prod_ids = self.search(cr, uid, [])
         # FIXME: is reading all the products in one go a good idea?
@@ -85,6 +100,7 @@ class search_base(osv.osv):
         # FIXME: also think about making use of the elastic search
         # bulk operations
         index = self._index_name(cr)
+        self.ensure_mapping(index)
         for product in prods:
             data = self._filter_values(product)
             if len(data) > 0:
@@ -99,9 +115,31 @@ class product_template_search(search_base):
     _inherit = "product.template"
     _register = True
 
+    # FIXME: perhaps derive columns_to_search from mapping?
     columns_to_search = ['description', 'description_sale',
                             'name', 'categ_id']
     search_type = 'product_template'
+    search_mapping = {
+        'name': {
+            'index': 'analyzed',
+            'store': 'yes',
+            'type': 'string',  # FIXME: ensure it is stemmed etc.
+        },
+        'description': {
+            'index': 'analyzed',
+            'store': 'yes',
+            'type': 'string',  # FIXME: ensure it is stemmed etc.
+        },
+        'description_sale': {
+            'index': 'analyzed',
+            'store': 'yes',
+            'type': 'string',  # FIXME: ensure it is stemmed etc.
+        },
+        'categ_id': {
+            'store': 'yes',
+            'type': 'integer',
+        },
+    }
 
 
 class product_search(search_base):
@@ -112,6 +150,27 @@ class product_search(search_base):
     columns_to_search = ['description', 'description_sale',
                             'name', 'categ_id']
     search_type = 'product'
+    search_mapping = {
+        'name': {
+            'index': 'analyzed',
+            'store': 'yes',
+            'type': 'string',  # FIXME: ensure it is stemmed etc.
+        },
+        'description': {
+            'index': 'analyzed',
+            'store': 'yes',
+            'type': 'string',  # FIXME: ensure it is stemmed etc.
+        },
+        'description_sale': {
+            'index': 'analyzed',
+            'store': 'yes',
+            'type': 'string',  # FIXME: ensure it is stemmed etc.
+        },
+        'categ_id': {
+            'store': 'yes',
+            'type': 'integer',
+        },
+    }
 
 
 class product_category_search(search_base):
@@ -122,6 +181,13 @@ class product_category_search(search_base):
 
     columns_to_search = ['name']
     search_type = 'product_category'
+    search_mapping = {
+        'name': {
+            'index': 'analyzed',
+            'store': 'yes',
+            'type': 'string',  # FIXME: ensure it is stemmed etc.
+        },
+    }
 
 
 product_template_search()
