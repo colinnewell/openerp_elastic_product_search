@@ -119,6 +119,7 @@ class product_template_search(search_base):
     columns_to_search = ['description', 'description_sale',
                             'name', 'categ_id']
     search_type = 'product_template'
+    # FIXME: ought to pull the type info from OpenERP itself.
     search_mapping = {
         'name': {
             'index': 'analyzed',
